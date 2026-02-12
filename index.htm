@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Joy</title>
+  <style>
+    :root {
+      --bg: #0f0f10;
+      --card: #18181b;
+      --accent: #e11d48;
+      --text: #f4f4f5;
+      --gold: #fbbf24;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: "Georgia", serif; }
+    body { 
+      background: #0f0f10; 
+      color: var(--text); 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      min-height: 100vh; 
+      overflow: hidden;
+      position: relative;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .card { 
+      background: var(--card); 
+      padding: 3rem 2rem; 
+      border-radius: 18px; 
+      max-width: 480px; 
+      width: 90%; 
+      text-align: center; 
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      position: relative;
+      z-index: 2;
+      transition: all 0.6s ease;
+    }
+
+    .card.glow {
+      box-shadow: 0 0 40px rgba(225, 29, 72, 0.4), 0 0 80px rgba(225, 29, 72, 0.2);
+    }
+
+    h1 { 
+      font-size: 2rem; 
+      margin-bottom: 1.5rem; 
+      letter-spacing: 1px;
+      transition: all 0.8s ease;
+    }
+
+    h1.shimmer {
+      background: linear-gradient(90deg, var(--accent), var(--gold), var(--accent));
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: shimmer 3s linear infinite;
+    }
+
+    @keyframes shimmer {
+      to { background-position: 200% center; }
+    }
+
+    p { 
+      font-size: 1.05rem; 
+      margin-bottom: 2rem; 
+      line-height: 1.6;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+
+    .question { 
+      font-size: 1.3rem; 
+      margin-bottom: 2rem;
+      transition: all 0.5s ease;
+    }
+
+    .question.pulse {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+
+    .button-container {
+      position: relative;
+      display: inline-block;
+    }
+
+    button { 
+      padding: 0.8rem 1.6rem; 
+      border: none; 
+      border-radius: 50%; 
+      font-size: 1.2rem; 
+      cursor: pointer; 
+      background: var(--accent); 
+      color: white; 
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 3;
+    }
+
+    button:hover { 
+      transform: scale(1.1);
+      box-shadow: 0 0 20px rgba(225, 29, 72, 0.6);
+    }
+
+    button.clicked {
+      pointer-events: none;
+    }
+
+    .flower { 
+      display: inline-block; 
+      transition: transform 0.5s ease; 
+    }
+
+    .flower.bloom { 
+      animation: bloom 1.2s forwards; 
+    }
+
+    @keyframes bloom {
+      0% { transform: scale(1) rotate(0deg); }
+      30% { transform: scale(1.8) rotate(180deg); }
+      60% { transform: scale(1.4) rotate(360deg); }
+      100% { transform: scale(1) rotate(720deg); }
+    }
+
+    .response { 
+      display: none; 
+      margin-top: 2rem; 
+      font-size: 1.1rem; 
+      color: var(--accent);
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .response.show {
+      display: block;
+      animation: fadeInUp 1s forwards 0.5s;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .secret-message {
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+      color: var(--gold);
+      opacity: 0;
+      font-style: italic;
+    }
+
+    .secret-message.reveal {
+      animation: fadeInUp 1s forwards 1.5s;
+    }
+
+    .countdown {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      color: #888;
+      opacity: 0;
+    }
+
+    .countdown.show {
+      animation: fadeInUp 1s forwards 2s;
+    }
+
+    /* Particle effect */
+    .particle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .heart-trail {
+      position: fixed;
+      font-size: 1.2rem;
+      pointer-events: none;
+      z-index: 1000;
+      animation: float 2s ease-out forwards;
+    }
+
+    @keyframes float {
+      0% {
+        opacity: 1;
+        transform: translateY(0) scale(0.5);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-100px) scale(1.5);
+      }
+    }
+
+    .fade-out {
+      animation: fadeOut 0.5s forwards;
+    }
+
+    @keyframes fadeOut {
+      to { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div class="card" id="card">
+    <h1 id="title">Joy</h1>
+    <p id="intro">
+      Took me long enough, didn't I? You've been hinting, I waited… my time, my way.
+      
+      So here it is. Worth the wait?
+    </p>
+
+    <div class="question" id="question">
+      Be my Valentine. Just a good time. Nothing else.
+    </div>
+
+    <div class="button-container">
+      <button id="valentineBtn">🌸</button>
+    </div>
+
+    <div class="response" id="reply">
+      Alright, you clicked it. Legend status unlocked. Prepare for laughs, Ice Cream, and maybe a massage bribe. 😎
+
+      <div class="secret-message" id="secret">
+       (Took you long enough to click.)
+      </div>
+      <div class="countdown" id="countdown"></div>
+    </div>
+  </div>
+
+  <script>
+    const btn = document.getElementById('valentineBtn');
+    const reply = document.getElementById('reply');
+    const card = document.getElementById('card');
+    const title = document.getElementById('title');
+    const question = document.getElementById('question');
+    const intro = document.getElementById('intro');
+    const secret = document.getElementById('secret');
+    const countdownDiv = document.getElementById('countdown');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Canvas setup
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // Particle system
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 6;
+        this.vy = (Math.random() - 0.5) * 6 - 2;
+        this.life = 1;
+        this.decay = Math.random() * 0.01 + 0.005;
+        this.size = Math.random() * 4 + 2;
+        this.color = Math.random() > 0.5 ? '#e11d48' : '#fbbf24';
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += 0.1; // gravity
+        this.life -= this.decay;
+      }
+
+      draw() {
+        ctx.globalAlpha = this.life;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    let particles = [];
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      particles.forEach((particle, index) => {
+        particle.update();
+        particle.draw();
+        
+        if (particle.life <= 0) {
+          particles.splice(index, 1);
+        }
+      });
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Create explosion of particles
+    function createExplosion(x, y, count = 50) {
+      for (let i = 0; i < count; i++) {
+        particles.push(new Particle(x, y));
+      }
+    }
+
+    // Continuous particle emission
+    let emitting = false;
+    function startEmission() {
+      emitting = true;
+      function emit() {
+        if (emitting) {
+          const rect = card.getBoundingClientRect();
+          const x = rect.left + rect.width / 2;
+          const y = rect.top + rect.height / 2;
+          
+          for (let i = 0; i < 3; i++) {
+            particles.push(new Particle(x, y));
+          }
+          
+          setTimeout(emit, 50);
+        }
+      }
+      emit();
+    }
+
+    // Mouse trail effect
+    document.addEventListener('mousemove', (e) => {
+      if (emitting && Math.random() > 0.7) {
+        const heart = document.createElement('div');
+        heart.className = 'heart-trail';
+        heart.textContent = ['💕', '💖', '✨', '🌸'][Math.floor(Math.random() * 4)];
+        heart.style.left = e.pageX + 'px';
+        heart.style.top = e.pageY + 'px';
+        document.body.appendChild(heart);
+        
+        setTimeout(() => heart.remove(), 2000);
+      }
+    });
+
+    // Calculate time until Valentine's Day
+    function getTimeUntilValentines() {
+      const now = new Date();
+      const valentines = new Date(now.getFullYear(), 1, 14); // Feb 14
+      
+      if (now > valentines) {
+        valentines.setFullYear(valentines.getFullYear() + 1);
+      }
+      
+      const diff = valentines - now;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      
+      return { days, hours };
+    }
+
+    // Main interaction
+    btn.addEventListener('click', function(e) {
+      // Prevent multiple clicks
+      btn.classList.add('clicked');
+      
+      // Get button position for explosion
+      const rect = btn.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      // Create initial explosion
+      createExplosion(x, y, 100);
+      
+      // Bloom animation
+      btn.classList.add('bloom');
+      
+      // Start continuous particle emission
+      setTimeout(() => startEmission(), 600);
+      
+      // Card effects
+      setTimeout(() => {
+        card.classList.add('glow');
+        title.classList.add('shimmer');
+      }, 300);
+      
+      // Fade out intro and question
+      setTimeout(() => {
+        intro.classList.add('fade-out');
+        question.classList.add('fade-out');
+      }, 800);
+      
+      // Show response with effects
+      setTimeout(() => {
+        intro.style.display = 'none';
+        question.style.display = 'none';
+        reply.classList.add('show');
+        secret.classList.add('reveal');
+      }, 1300);
+      
+      // Show countdown
+      setTimeout(() => {
+        const { days, hours } = getTimeUntilValentines();
+        countdownDiv.textContent = `${days} days, ${hours} hours until Valentine's Day`;
+        countdownDiv.classList.add('show');
+      }, 2000);
+      
+      // Stop emission after a while but keep some particles
+      setTimeout(() => {
+        emitting = false;
+      }, 8000);
+      
+      // Random confetti bursts
+      const bursts = [3000, 4500, 6000];
+      bursts.forEach(time => {
+        setTimeout(() => {
+          const rect = card.getBoundingClientRect();
+          createExplosion(
+            rect.left + Math.random() * rect.width,
+            rect.top + Math.random() * rect.height,
+            30
+          );
+        }, time);
+      });
+    });
+
+    // Easter egg: pulse question on hover
+    question.addEventListener('mouseenter', () => {
+      question.classList.add('pulse');
+    });
+
+    question.addEventListener('mouseleave', () => {
+      question.classList.remove('pulse');
+    });
+  </script>
+</body>
+</html>
